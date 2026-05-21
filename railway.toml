@@ -1,0 +1,6 @@
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+startCommand = "node main.js"
+restartPolicyType = "ALWAYS"

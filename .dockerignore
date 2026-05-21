@@ -1,0 +1,7 @@
+node_modules
+.env
+*.png
+diagnostico.js
+main.py
+requirements.txt
+*.output
