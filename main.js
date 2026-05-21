@@ -185,16 +185,6 @@ async function checkAllSlots(page) {
 async function main() {
   log("=== Prenotami Bot iniciado ===");
 
-  const serviceList = ALL_SERVICES.map((s) => `⭐ ${s.emoji} ${s.name}`).join("\n");
-
-  await telegram(
-    "🤖 <b>Prenotami Bot está rodando!</b>\n\n" +
-    "Monitorando o Consulado Geral da Itália.\n\n" +
-    "<b>Serviços (em ordem de prioridade):</b>\n" +
-    serviceList + "\n\n" +
-    `⏱ Verificação a cada ${INTERVAL / 60_000} minutos.`
-  );
-
   const browser = await chromium.launch({
     headless: IS_SERVER,          // headless no servidor, visível no PC
     channel:  IS_SERVER ? undefined : "chrome",  // Chrome real só no PC
@@ -244,12 +234,11 @@ async function main() {
           log(`Sem vagas em nenhum serviço. Próxima verificação em ${INTERVAL / 1000}s.`);
         }
       } else {
-        await telegram("❌ <b>Login falhou!</b> Verifique as credenciais no .env");
-        await new Promise((r) => setTimeout(r, 300_000)); // aguarda 5 min antes de tentar de novo
+        log("Login falhou — aguardando 5 min para tentar novamente.");
+        await new Promise((r) => setTimeout(r, 300_000));
       }
     } catch (e) {
-      log(`Erro geral: ${e.message}`);
-      await telegram(`❌ <b>Erro no bot:</b>\n<code>${e.message.slice(0, 300)}</code>`);
+      log(`Erro geral: ${e.message.split("\n")[0]}`);
     } finally {
       await ctx.close();
     }
