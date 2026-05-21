@@ -184,6 +184,8 @@ async function checkAllSlots(page) {
 
 async function main() {
   log("=== Prenotami Bot iniciado ===");
+  // Guarda quais serviços já foram notificados (evita repetição)
+  const notified = new Set();
 
   const browser = await chromium.launch({
     headless: IS_SERVER,          // headless no servidor, visível no PC
@@ -219,18 +221,25 @@ async function main() {
         const found = await checkAllSlots(page);
 
         if (found) {
-          await page.screenshot({ path: SCREENSHOT, fullPage: true });
-          await telegram(
-            `${found.emoji} <b>VAGA DISPONÍVEL!</b>\n\n` +
-            `<b>Serviço:</b> ${found.name}\n\n` +
-            "👉 Acesse AGORA:\n" +
-            `${BASE}/Services/Booking/${found.id}\n\n` +
-            `⏰ ${new Date().toLocaleString("pt-BR")}`,
-            SCREENSHOT
-          );
-          log(`Vaga detectada em [${found.name}]! Pausando 10 minutos...`);
-          await new Promise((r) => setTimeout(r, 600_000));
+          if (!notified.has(found.id)) {
+            // Notifica apenas se ainda não avisou sobre este serviço
+            await page.screenshot({ path: SCREENSHOT, fullPage: true });
+            await telegram(
+              `${found.emoji} <b>VAGA DISPONÍVEL!</b>\n\n` +
+              `<b>Serviço:</b> ${found.name}\n\n` +
+              "👉 Acesse AGORA:\n" +
+              `${BASE}/Services/Booking/${found.id}\n\n` +
+              `⏰ ${new Date().toLocaleString("pt-BR")}`,
+              SCREENSHOT
+            );
+            notified.add(found.id);
+            log(`Vaga detectada em [${found.name}]! Notificado. Próxima verificação em ${INTERVAL / 1000}s.`);
+          } else {
+            log(`[${found.name}] ainda com vaga — já notificado, aguardando.`);
+          }
         } else {
+          // Se não há vagas, limpa os notificados para poder avisar novamente quando abrir
+          notified.clear();
           log(`Sem vagas em nenhum serviço. Próxima verificação em ${INTERVAL / 1000}s.`);
         }
       } else {
